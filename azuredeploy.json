@@ -115,7 +115,7 @@
       "type": "string",
       "defaultValue": "VNet1",
       "metadata": {
-        "description": "VNet name"
+        "description": "VNet name that will contain the WebAp"
       }
     },
     "VNET_AddressPrefix": {
@@ -130,7 +130,7 @@
       "type": "string",
       "defaultValue": "Subnet1",
       "metadata": {
-        "description": "Subnet 1 Name. The Front"
+        "description": "Subnet Name that will contain the WebApp"
       }
     },
 
