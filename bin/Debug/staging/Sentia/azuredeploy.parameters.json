@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "KeyVault_Name": {
+      "value": "l5aya4n44"
+    },
+    "Object_ID": {
+      "value": "19a6deea-9614-4698-859d-0493c3b7384a"
+    },
+    "Secret_Name": {
+      "value": "layan"
+    },
+    "Secret_Value": {
+      "value": "layanh45"
+    },
+    "StorageAccount_name": {
+      "value": "tes4tsentia"
+    },
+    "VNET_Name": {
+      "value": "VNet4"
+    }
+  }
+}

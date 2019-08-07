@@ -1,0 +1,728 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "StorageAccount_name": {
+      "defaultValue": "testsentia1",
+      "type": "string"
+    },
+
+    "Location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Specifies the Azure location where the key vault should be created."
+      }
+    },
+
+    "KeyVault_Name": {
+      "type": "string",
+      "metadata": {
+        "description": "Specifies the name of the key vault."
+      }
+    },
+
+    "Secret_EnabledForDeployment": {
+      "type": "bool",
+      "defaultValue": false,
+      "allowedValues": [
+        true,
+        false
+      ],
+      "metadata": {
+        "description": "Specifies whether Azure Virtual Machines are permitted to retrieve certificates stored as secrets from the key vault."
+      }
+    },
+    "Secret_EnabledForDiskEncryption": {
+      "type": "bool",
+      "defaultValue": false,
+      "allowedValues": [
+        true,
+        false
+      ],
+      "metadata": {
+        "description": "Specifies whether Azure Disk Encryption is permitted to retrieve secrets from the vault and unwrap keys."
+      }
+    },
+    "Secret_EnabledForTemplateDeployment": {
+      "type": "bool",
+      "defaultValue": false,
+      "allowedValues": [
+        true,
+        false
+      ],
+      "metadata": {
+        "description": "Specifies whether Azure Resource Manager is permitted to retrieve secrets from the key vault."
+      }
+    },
+    "Tenant_ID": {
+      "type": "string",
+      "defaultValue": "[subscription().tenantId]",
+      "metadata": {
+        "description": "Specifies the Azure Active Directory tenant ID that should be used for authenticating requests to the key vault. Get it by using Get-AzSubscription cmdlet."
+      }
+    },
+    "Object_ID": {
+      "type": "string",
+      "metadata": {
+        "description": "Specifies the object ID of a user, service principal or security group in the Azure Active Directory tenant for the vault. The object ID must be unique for the list of access policies. Get it by using Get-AzADUser or Get-AzADServicePrincipal cmdlets."
+      }
+    },
+
+    "Key_Permissions": {
+      "type": "array",
+      "defaultValue": [
+        "list"
+      ],
+      "metadata": {
+        "description": "Specifies the permissions to keys in the vault. Valid values are: all, encrypt, decrypt, wrapKey, unwrapKey, sign, verify, get, list, create, update, import, delete, backup, restore, recover, and purge."
+      }
+    },
+    "Secret_Permissions": {
+      "type": "array",
+      "defaultValue": [
+        "list"
+      ],
+      "metadata": {
+        "description": "Specifies the permissions to secrets in the vault. Valid values are: all, get, list, set, delete, backup, restore, recover, and purge."
+      }
+    },
+    "KeyVault_SKU": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "allowedValues": [
+        "Standard",
+        "Premium"
+      ],
+      "metadata": {
+        "description": "Specifies whether the key vault is a standard vault or a premium vault."
+      }
+    },
+    "Secret_Name": {
+      "type": "string",
+      "metadata": {
+        "description": "Specifies the name of the secret that you want to create."
+      }
+    },
+    "Secret_Value": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Specifies the value of the secret that you want to create."
+      }
+    },
+
+    "VNET_Name": {
+      "type": "string",
+      "defaultValue": "VNet1",
+      "metadata": {
+        "description": "VNet name"
+      }
+    },
+    "VNET_AddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16",
+      "metadata": {
+        "description": "Address prefix"
+      }
+    },
+
+    "Subnet_Name": {
+      "type": "string",
+      "defaultValue": "Subnet1",
+      "metadata": {
+        "description": "Subnet 1 Name. The Front"
+      }
+    },
+
+    "Subnet_Prefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/24",
+      "metadata": {
+        "description": "ASE Subnet Prefix"
+      }
+    },
+
+    "Web_Site_Name": {
+      "defaultValue": "layanlayane",
+      "type": "string"
+    },
+    "App_Service_Plan_Name": {
+      "defaultValue": "ASR-SrvPlan",
+      "type": "string"
+    },
+
+    "App_Service_Plan_RG": {
+      "defaultValue": "MSI-ASR-Dashboard-01",
+      "type": "string"
+    }
+
+
+  },
+  "variables": {
+
+
+    //VNET
+    "VNET_ID": "[resourceId('Microsoft.Network/virtualNetworks', parameters('VNET_Name'))]",
+
+
+    //NSG
+    "NSG_Name": "NSG",
+    "NSG_ID": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('NSG_Name'))]",
+
+
+    //RouteTable
+    "RouteTable_Name": "RT",
+
+    //App Service plan
+    "App_Service_Plan_ID": "[concat( '/subscriptions/', subscription().id ,'/resourceGroups/', parameters('App_Service_Plan_RG'), '/providers/Microsoft.Web/serverfarms/', parameters('App_Service_Plan_Name'))]"
+
+
+
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2019-04-01",
+      "name": "[parameters('StorageAccount_name')]",
+      "location": "[parameters('Location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('VNET_Name'))]"
+      ],
+
+      "tags": {
+        "Sentia": "Prod"
+      },
+
+      "sku": {
+        "name": "Standard_LRS",
+        "tier": "Standard"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "encryption": {
+          "keySource": "Microsoft.Storage",
+          "services": {
+            "blob": {
+              "enabled": true
+            },
+            "file": {
+              "enabled": true
+            }
+          }
+        },
+        "isHnsEnabled": true,
+        "supportsHttpsTrafficOnly": true,
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "defaultAction": "Deny",
+          "virtualNetworkRules": [
+            {
+              "id": "[concat(variables('VNET_ID'), '/subnets/', parameters('Subnet_Name'))]",
+              "action": "Allow"
+            }
+          ]
+
+        }
+
+      }
+    },
+
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "name": "[parameters('KeyVault_Name')]",
+      "apiVersion": "2018-02-14",
+      "location": "[parameters('Location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('VNET_Name'))]"
+      ],
+
+      "tags": {
+        "Sentia": "Prod"
+      },
+      "properties": {
+        "Secret_EnabledForDeployment": true,
+        "Secret_EnabledForDiskEncryption": true,
+        "Secret_EnabledForTemplateDeployment": true,
+        "tenantId": "[parameters('Tenant_ID')]",
+        "accessPolicies": [
+          {
+            "objectid": "[parameters('Object_ID')]",
+            "tenantId": "[parameters('Tenant_ID')]",
+            "permissions": {
+              "keys": "[parameters('Key_Permissions')]",
+              "secrets": "[parameters('Secret_Permissions')]"
+            }
+          }
+        ],
+        "sku": {
+          "name": "[parameters('KeyVault_SKU')]",
+          "family": "A"
+        },
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "defaultAction": "Deny",
+          "virtualNetworkRules": [
+            {
+              "id": "[concat(variables('VNET_ID'), '/subnets/', parameters('Subnet_Name'))]",
+              "action": "Allow"
+            }
+          ]
+
+        }
+      }
+    },
+
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "name": "[concat(parameters('KeyVault_Name'), '/', parameters('Secret_Name'))]",
+      "apiVersion": "2018-02-14",
+      "location": "[parameters('Location')]",
+      "tags": {
+        "Sentia": "Prod"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('KeyVault_Name'))]"
+      ],
+      "properties": {
+        "value": "[parameters('Secret_Value')]"
+      }
+    },
+
+
+    {
+      "apiVersion": "2017-06-01",
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[parameters('VNET_Name')]",
+      "location": "[parameters('Location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('NSG_Name'))]",
+        "[resourceId('Microsoft.Network/routeTables', variables('RouteTable_Name'))]"
+      ],
+      "tags": {
+        "Sentia": "Prod"
+      },
+
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('VNET_AddressPrefix')]"
+          ]
+        },
+
+        "subnets": [
+          {
+            "name": "[parameters('Subnet_Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('Subnet_Prefix')]",
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Storage"
+                },
+                {
+                  "service": "Microsoft.KeyVault"
+                }
+              ],
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('NSG_Name'))]"
+              },
+              "routeTable": {
+                "id": "[resourceId('Microsoft.Network/routeTables', variables('RouteTable_Name'))]"
+              }
+
+            }
+          }
+
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2016-08-01",
+      "name": "[parameters('Web_Site_Name')]",
+      "location": "[parameters('Location')]",
+      "kind": "app",
+      "tags": {
+        "Sentia": "Prod"
+      },
+      "properties": {
+        "enabled": true,
+        "hostNameSslStates": [
+          {
+            "name": "[concat(parameters('Web_Site_Name'), '.azurewebsites.net')]",
+            "sslState": "Disabled",
+            "hostType": "Standard"
+          },
+          {
+            "name": "[concat(parameters('Web_Site_Name'), '.scm.azurewebsites.net')]",
+            "sslState": "Disabled",
+            "hostType": "Repository"
+          }
+        ],
+        "serverFarmId": "[variables('App_Service_Plan_ID')]",
+        "reserved": false,
+        "scmSiteAlsoStopped": false,
+        "clientAffinityEnabled": true,
+        "clientCertEnabled": false,
+        "hostNamesDisabled": false,
+        "containerSize": 0,
+        "dailyMemoryTimeQuota": 0,
+        "httpsOnly": false
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2016-08-01",
+      "name": "[concat(parameters('Web_Site_Name'), '/web')]",
+      "location": "[parameters('Location')]",
+      "tags": {
+        "Sentia": "Prod"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('Web_Site_Name'))]"
+      ],
+      "properties": {
+        "numberOfWorkers": 1,
+        "defaultDocuments": [
+          "Default.htm",
+          "Default.html",
+          "Default.asp",
+          "index.htm",
+          "index.html",
+          "iisstart.htm",
+          "default.aspx",
+          "index.php",
+          "hostingstart.html"
+        ],
+        "netFrameworkVersion": "v4.0",
+        "phpVersion": "5.6",
+        "pythonVersion": "",
+        "nodeVersion": "",
+        "linuxFxVersion": "",
+        "requestTracingEnabled": false,
+        "remoteDebuggingEnabled": false,
+        "httpLoggingEnabled": false,
+        "logsDirectorySizeLimit": 35,
+        "detailedErrorLoggingEnabled": false,
+        "scmType": "None",
+        "use32BitWorkerProcess": true,
+        "webSocketsEnabled": false,
+        "alwaysOn": false,
+        "appCommandLine": "",
+        "managedPipelineMode": "Integrated",
+        "virtualApplications": [
+          {
+            "virtualPath": "/",
+            "physicalPath": "site\\wwwroot",
+            "preloadEnabled": false
+          }
+        ],
+        "winAuthAdminState": 0,
+        "winAuthTenantState": 0,
+        "customAppPoolIdentityAdminState": false,
+        "customAppPoolIdentityTenantState": false,
+        "loadBalancing": "LeastRequests",
+        "routingRules": [],
+        "experiments": {
+          "rampUpRules": []
+        },
+        "autoHealEnabled": false,
+        "vnetName": "",
+        "siteAuthEnabled": false,
+        "siteAuthSettings": {
+        },
+        "localMySqlEnabled": false,
+        "http20Enabled": false,
+        "minTlsVersion": "1.2",
+        "ftpsState": "AllAllowed",
+        "reservedInstanceCount": 0,
+        "fileChangeAuditEnabled": false
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/hostNameBindings",
+      "apiVersion": "2016-08-01",
+      "name": "[concat(parameters('Web_Site_Name'), '/', parameters('Web_Site_Name'), '.azurewebsites.net')]",
+      "location": "[parameters('Location')]",
+      "tags": {
+        "Sentia": "Prod"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('Web_Site_Name'))]"
+      ],
+      "properties": {
+        "siteName": "[parameters('Web_Site_Name')]"
+      }
+    },
+
+
+    {
+      "type": "Microsoft.Web/sites/virtualNetworkConnections",
+      "apiVersion": "2016-08-01",
+      "name": "[concat(parameters('Web_Site_Name'), '/Snt-VNET')]",
+      "location": "[parameters('Location')]",
+      "tags": {
+        "Sentia": "Prod"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('Web_Site_Name'))]"
+      ],
+      "properties": {
+        "vnetResourceId": "[variables('VNET_ID')]"
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/routeTables",
+      "apiVersion": "2015-06-15",
+      "name": "[variables('RouteTable_Name')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "Sentia": "Prod"
+      },
+      "properties": {
+        "routes": [
+          {
+            "name": "ToInternet",
+            "properties": {
+              "addressPrefix": "0.0.0.0/0",
+              "nextHopType": "Internet"
+            }
+          }
+        ]
+      }
+    },
+
+
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2017-06-01",
+      "name": "[variables('NSG_Name')]",
+      "location": "[parameters('Location')]",
+      "dependsOn": [
+      ],
+
+      "tags": {
+        "Sentia": "Prod"
+      },
+
+      "properties": {
+        "securityRules": [
+
+          {
+            "name": "Inbound-management",
+            "properties": {
+              "description": "Used to manage ASE from public VIP",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "454-455",
+              "sourceAddressPrefix": "AppServiceManagement",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "ASE-internal-inbound",
+            "properties": {
+              "description": "ASE-internal-inbound",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "[parameters('Subnet_Prefix')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 110,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Inbound-HTTP",
+            "properties": {
+              "description": "Allow HTTP",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Inbount-HTTPS",
+            "properties": {
+              "description": "Allow HTTPS",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 130,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Inbound-FTP",
+            "properties": {
+              "description": "Allow FTP over port 21",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "21",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 140,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Inbound-FTPS",
+            "properties": {
+              "description": "Allow FTPS",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "990",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 150,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Inbound-FTP-Data",
+            "properties": {
+              "description": "RDP",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "10001-10020",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 160,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Inbound-Remote-Debugging",
+            "properties": {
+              "description": "Visual Studio remote debugging",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "4016-4022",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 170,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Outbound-443",
+            "properties": {
+              "description": "Azure Storage blob",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "Outbound-DB",
+            "properties": {
+              "description": "Database",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "1433",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "Sql",
+              "access": "Allow",
+              "priority": 110,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "Outbound-DNS",
+            "properties": {
+              "description": "DNS",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "53",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "ASE-internal-outbound",
+            "properties": {
+              "description": "Azure Storage queue",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[parameters('Subnet_Prefix')]",
+              "access": "Allow",
+              "priority": 130,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "Outbound-80",
+            "properties": {
+              "description": "Outbound 80",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 140,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "ASE-to-VNET",
+            "properties": {
+              "description": "ASE to VNET",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "[parameters('VNET_AddressPrefix')]",
+              "access": "Allow",
+              "priority": 150,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "Outbound-NTP",
+            "properties": {
+              "description": "Clock",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "123",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 160,
+              "direction": "Outbound"
+            }
+          }
+
+        ]
+      }
+    }
+
+  ],
+        "outputs": {}
+      }
