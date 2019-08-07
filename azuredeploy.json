@@ -138,7 +138,7 @@
       "type": "string",
       "defaultValue": "10.0.0.0/24",
       "metadata": {
-        "description": "ASE Subnet Prefix"
+        "description": "Subnet Prefix that will contain the WebApp"
       }
     },
 
