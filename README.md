@@ -1,10 +1,10 @@
 # Sentia
 This template creates: 
-An Azure Datalake Gen 2 storage account.
-A key vault with a secret
-A virtual network
-A web app that can access both the datalake storage and the key vault secret
-Tags to group the resources. 
+1. An Azure Datalake Gen 2 storage account.
+2. A key vault with a secret
+3. A virtual network
+4. A web app that can access both the datalake storage and the key vault secret
+5. Tags to group the resources. 
 
 
 Assumptions:
