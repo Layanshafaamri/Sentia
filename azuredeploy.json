@@ -345,30 +345,11 @@
         "Sentia": "Prod"
       },
       "properties": {
-        "enabled": true,
-        "hostNameSslStates": [
-          {
-            "name": "[concat(parameters('Web_Site_Name'), '.azurewebsites.net')]",
-            "sslState": "Disabled",
-            "hostType": "Standard"
-          },
-          {
-            "name": "[concat(parameters('Web_Site_Name'), '.scm.azurewebsites.net')]",
-            "sslState": "Disabled",
-            "hostType": "Repository"
-          }
-        ],
         "serverFarmId": "[variables('App_Service_Plan_ID')]",
-        "reserved": false,
-        "scmSiteAlsoStopped": false,
-        "clientAffinityEnabled": true,
-        "clientCertEnabled": false,
-        "hostNamesDisabled": false,
-        "containerSize": 0,
-        "dailyMemoryTimeQuota": 0,
-        "httpsOnly": false
       }
     },
+
+
     {
       "type": "Microsoft.Web/sites/config",
       "apiVersion": "2016-08-01",
@@ -381,63 +362,11 @@
         "[resourceId('Microsoft.Web/sites', parameters('Web_Site_Name'))]"
       ],
       "properties": {
-        "numberOfWorkers": 1,
-        "defaultDocuments": [
-          "Default.htm",
-          "Default.html",
-          "Default.asp",
-          "index.htm",
-          "index.html",
-          "iisstart.htm",
-          "default.aspx",
-          "index.php",
-          "hostingstart.html"
-        ],
-        "netFrameworkVersion": "v4.0",
-        "phpVersion": "5.6",
-        "pythonVersion": "",
-        "nodeVersion": "",
-        "linuxFxVersion": "",
-        "requestTracingEnabled": false,
-        "remoteDebuggingEnabled": false,
-        "httpLoggingEnabled": false,
-        "logsDirectorySizeLimit": 35,
-        "detailedErrorLoggingEnabled": false,
-        "scmType": "None",
-        "use32BitWorkerProcess": true,
-        "webSocketsEnabled": false,
-        "alwaysOn": false,
-        "appCommandLine": "",
-        "managedPipelineMode": "Integrated",
-        "virtualApplications": [
-          {
-            "virtualPath": "/",
-            "physicalPath": "site\\wwwroot",
-            "preloadEnabled": false
-          }
-        ],
-        "winAuthAdminState": 0,
-        "winAuthTenantState": 0,
-        "customAppPoolIdentityAdminState": false,
-        "customAppPoolIdentityTenantState": false,
-        "loadBalancing": "LeastRequests",
-        "routingRules": [],
-        "experiments": {
-          "rampUpRules": []
-        },
-        "autoHealEnabled": false,
-        "vnetName": "",
-        "siteAuthEnabled": false,
-        "siteAuthSettings": {
-        },
-        "localMySqlEnabled": false,
-        "http20Enabled": false,
-        "minTlsVersion": "1.2",
-        "ftpsState": "AllAllowed",
-        "reservedInstanceCount": 0,
-        "fileChangeAuditEnabled": false
+        "numberOfWorkers": 1
       }
     },
+
+
     {
       "type": "Microsoft.Web/sites/hostNameBindings",
       "apiVersion": "2016-08-01",
@@ -507,7 +436,7 @@
 
       "properties": {
         "securityRules": [
-
+          //Inbound
           {
             "name": "Inbound-management",
             "properties": {
@@ -595,7 +524,7 @@
           {
             "name": "Inbound-FTP-Data",
             "properties": {
-              "description": "RDP",
+              "description": "FTP-Data",
               "protocol": "*",
               "sourcePortRange": "*",
               "destinationPortRange": "10001-10020",
@@ -606,6 +535,7 @@
               "direction": "Inbound"
             }
           },
+
           {
             "name": "Inbound-Remote-Debugging",
             "properties": {
@@ -616,106 +546,23 @@
               "sourceAddressPrefix": "*",
               "destinationAddressPrefix": "*",
               "access": "Allow",
-              "priority": 170,
+              "priority": 180,
               "direction": "Inbound"
             }
           },
+
           {
-            "name": "Outbound-443",
+            "name": "Inbound-Internal-LoadBalancer",
             "properties": {
-              "description": "Azure Storage blob",
+              "description": "Internal-LoadBalancer",
               "protocol": "*",
               "sourcePortRange": "*",
-              "destinationPortRange": "443",
+              "destinationPortRange": "16001",
               "sourceAddressPrefix": "*",
               "destinationAddressPrefix": "*",
               "access": "Allow",
-              "priority": 100,
-              "direction": "Outbound"
-            }
-          },
-          {
-            "name": "Outbound-DB",
-            "properties": {
-              "description": "Database",
-              "protocol": "*",
-              "sourcePortRange": "*",
-              "destinationPortRange": "1433",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "Sql",
-              "access": "Allow",
-              "priority": 110,
-              "direction": "Outbound"
-            }
-          },
-          {
-            "name": "Outbound-DNS",
-            "properties": {
-              "description": "DNS",
-              "protocol": "*",
-              "sourcePortRange": "*",
-              "destinationPortRange": "53",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "*",
-              "access": "Allow",
-              "priority": 120,
-              "direction": "Outbound"
-            }
-          },
-          {
-            "name": "ASE-internal-outbound",
-            "properties": {
-              "description": "Azure Storage queue",
-              "protocol": "*",
-              "sourcePortRange": "*",
-              "destinationPortRange": "*",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "[parameters('Subnet_Prefix')]",
-              "access": "Allow",
-              "priority": 130,
-              "direction": "Outbound"
-            }
-          },
-          {
-            "name": "Outbound-80",
-            "properties": {
-              "description": "Outbound 80",
-              "protocol": "*",
-              "sourcePortRange": "*",
-              "destinationPortRange": "80",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "*",
-              "access": "Allow",
-              "priority": 140,
-              "direction": "Outbound"
-            }
-          },
-          {
-            "name": "ASE-to-VNET",
-            "properties": {
-              "description": "ASE to VNET",
-              "protocol": "*",
-              "sourcePortRange": "*",
-              "destinationPortRange": "*",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "[parameters('VNET_AddressPrefix')]",
-              "access": "Allow",
-              "priority": 150,
-              "direction": "Outbound"
-            }
-          },
-          {
-            "name": "Outbound-NTP",
-            "properties": {
-              "description": "Clock",
-              "protocol": "*",
-              "sourcePortRange": "*",
-              "destinationPortRange": "123",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "*",
-              "access": "Allow",
-              "priority": 160,
-              "direction": "Outbound"
+              "priority": 170,
+              "direction": "Inbound"
             }
           }
 

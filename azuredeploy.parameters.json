@@ -19,6 +19,26 @@
     },
     "VNET_Name": {
       "value": "VNet4"
+    },
+    "Secret_EnabledForDeployment": {
+      "value": true
+    },
+    "Secret_EnabledForDiskEncryption": {
+      "value": true
+    },
+    "Secret_EnabledForTemplateDeployment": {
+      "value": true
+    },
+    "Key_Permissions": {
+      "value": [
+        "create"
+      ]
+    },
+    "Secret_Permissions": {
+      "value": [
+        "list",
+        "set"
+      ]
     }
   }
 }
